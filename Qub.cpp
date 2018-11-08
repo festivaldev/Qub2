@@ -8,7 +8,8 @@
 
 #include "Qub.h"
 
-const int columns[]	= { 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+// const int columns[]	= { 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+const int columns[] = { 6, 3, 4, 7, 10, 9, 8, 5, 2 };
 const int layers[]	= { 11, 12, 13 };
 
 /**
