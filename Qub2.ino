@@ -11,7 +11,7 @@
 void setup() {
 	Qub::setup();
 
-	//stage1_setup();
+	stage1_setup();
 	//stage2_setup();
 }
 
