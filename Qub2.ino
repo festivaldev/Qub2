@@ -228,24 +228,16 @@ void stage2_loop()
     delayMicroseconds(timeOff);
 }
 
-int rotatePattern[][2] = {
-    {1, 0},
-    {2, 0},
-    {2, 3},
-    {2, 6},
-    {1, 6},
-    {0, 6},
-    {0, 3}
-};
-
 int cLayer = 1;
 int cLed = 0;
 int layerStore[][9] = {
-    {9, 2, 3, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0, 0}
+    {1, 0, 0, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 unsigned long rotateTime = millis();
+int rotateCounter = 0;
+int setI = 1;
 
 void stage3_loop() {
     Qub::enableLayer(1);
@@ -281,58 +273,112 @@ void stage3_loop() {
     Qub::disableLayers();
     Qub::disableColumns();
 
-    if (millis() > rotateTime + 2000) {
-        int store[] = {layerStore[0][0], layerStore[0][1], layerStore[0][2]};
+    if (millis() > rotateTime + 200) {
+        if (setI < 4) {
 
-        for (int i = 0; i < 8; i++) {
-            shift(cLayer, cLed);
-            shift(cLayer, cLed + 1);
-            shift(cLayer, cLed + 2);
+            // WORKS FLAWLESSLY
 
-            if (cLed == 0 && cLayer < 2) {
-                cLayer++;
+            int store[] = {layerStore[0][0], layerStore[0][1], layerStore[0][2]};
+
+            for (int i = 0; i < 7; i++) {
+                shift(cLayer, cLed);
+                shift(cLayer, cLed + 1);
+                shift(cLayer, cLed + 2);
+
+                if (cLed == 0 && cLayer < 2) {
+                    cLayer++;
+                } else if (cLayer == 2 && cLed < 6) {
+                    cLed += 3;
+                } else if (cLed == 6 && cLayer > 0) {
+                    cLayer--;
+                } else if (cLayer == 0 && cLed > 3) {
+                    cLed -= 3;
+                } else if (cLayer == 0 && cLed == 3) {
+                    cLayer = 1;
+                    cLed = 0;
+                }
             }
 
-            if (cLayer == 2 && cLed < 6) {
-                cLed += 3;
-            }
+            layerStore[0][3] = store[0] + (store[0] == 0 ? 0 : 3);
+            layerStore[0][4] = store[1] + (store[1] == 0 ? 0 : 3);
+            layerStore[0][5] = store[2] + (store[2] == 0 ? 0 : 3);
+        } else {
 
-            if (cLed == 6 && cLayer > 0) {
-                cLayer--;
-            }
+            // DOESN'T WORK
 
-            if (cLayer == 0 && cLed > 3) {
-                cLed -= 3;
-            }
+            for (int l = 0; l < 3; l++) {
 
-            if (cLayer == 0 && cLed == 3) {
-                cLayer = 1;
-                cLed = 0;
+                int s = layerStore[l][0];
+
+                for (int i = 1; i < 8; i++) {
+                    int n = layerStore[l][i];
+                    if (n > 0) {
+                        n++;
+                        if (n == 10) {
+                            n = 1;
+                        }
+                    }
+                    int ii = i++;
+                    if (ii == 8) {
+                        ii = 0;
+                    }
+                    layerStore[l][ii] = n;
+                    layerStore[l][i] = 0;
+                }
+
+                layerStore[l][1] = s;
             }
         }
 
-        layerStore[0][3] = store[0];
-        layerStore[0][4] = store[1];
-        layerStore[0][5] = store[2];
-
         rotateTime = millis();
+        rotateCounter++;
+    }
+
+    if (rotateCounter == 8) {
+        Qub::disableLayers();
+        Qub::disableColumns();
+
+        rotateCounter = 0;
+        Qub::changeSet(setI++);
+
+        if (setI == 5) {
+            setI = 0;
+        }
     }
 }
 
 void shift(int from, int index) {
     if (from == 0 && index < 6) {
+
         // Move South
-        layerStore[from][index + 3] = layerStore[from][index];
+        if (layerStore[from][index] > 0) {
+            layerStore[from][index + 3] = layerStore[from][index] + 3;
+        } else {
+            layerStore[from][index + 3] = layerStore[from][index];
+        }
+
     } else if (from < 2 && index >= 6) {
+
         // Shift Up
         layerStore[from + 1][index] = layerStore[from][index];
+
     } else if (from == 2 && index > 2) {
+
         // Move North
-        layerStore[from][index - 3] = layerStore[from][index];
+        if (layerStore[from][index] > 0) {
+            layerStore[from][index - 3] = layerStore[from][index] - 3;
+        } else {
+            layerStore[from][index - 3] = layerStore[from][index];
+        }
+
     } else if (from > 0 && index <= 2) {
+
         // Shift Down
         layerStore[from - 1][index] = layerStore[from][index];
+
     }
+    
+    layerStore[from][index] = 0;
 }
 
 int numberDefs[][9] = {
