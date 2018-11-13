@@ -318,7 +318,7 @@ void stage3_loop() {
                             n = 1;
                         }
                     }
-                    int ii = i++;
+                    int ii = i+1;   // SRSLY?!
                     if (ii == 8) {
                         ii = 0;
                     }
