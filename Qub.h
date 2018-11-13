@@ -14,8 +14,10 @@
 class Qub {
 	public:
 		static void setup();
-		
-		static void enableColumn(int column);
+
+        static void changeSet(int set);
+
+        static void enableColumn(int column);
 		static void disableColumn(int column);
 		static void enableColumns();
 		static void disableColumns();
