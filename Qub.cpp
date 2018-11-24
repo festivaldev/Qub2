@@ -8,19 +8,17 @@
 
 #include "Qub.h"
 
-// Axis are defined by the USB port orientation (S)
-
-const int sets[][9] = {
-    { 2, 3, 4, 5, 6, 7, 8, 9, 10 }, // X Axis / N -> S
-    { 10, 9, 8, 7, 6, 5, 4, 3, 2 }, // X Axis / N <- S
-    { 4, 7, 10, 3, 6, 9, 2, 5, 8 }, // Y Axis / W -> E
-    { 8, 5, 2, 9, 6, 3, 10, 7, 4 }, // Y Axis / W <- E
-    { 2, 3, 4, 7, 10, 9, 8, 5, 6 }, // Z Axis / CW
-    { 6, 3, 4, 7, 10, 9, 8, 5, 2 }, // FINAL
-};
-
 static int columns[] = { 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 const int layers[] = { 11, 12, 13 };
+
+const int sets[][9] = {
+    { 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+    { 10, 9, 8, 7, 6, 5, 4, 3, 2 },
+    { 4, 7, 10, 3, 6, 9, 2, 5, 8 },
+    { 8, 5, 2, 9, 6, 3, 10, 7, 4 },
+    { 2, 3, 4, 7, 10, 9, 8, 5, 6 },
+    { 6, 3, 4, 7, 10, 9, 8, 5, 2 },
+};
 
 /**
  * @brief Setup Qub and configure the required pins
@@ -38,6 +36,11 @@ void Qub::setup() {
 	}
 }
 
+/**
+ * @brief Changes the pin definition order by selecting a new set
+ * 
+ * @param set The set index to select
+ */
 void Qub::changeSet(int set) {
     for (int i = 0; i < 9; i++) {
         columns[i] = sets[set][i];
@@ -178,8 +181,6 @@ void Qub::enableLEDsInLayer(int layer) {
 	Qub::enableColumns();
 	Qub::enableLayer(layer);
 }
-
-
 
 /**
  * @brief Checks if a value is in a defined range

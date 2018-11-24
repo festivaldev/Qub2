@@ -32,7 +32,6 @@ class Qub {
 		static void enableLEDInLayer(int column, int layer);
 		static void enableLEDsInLayer(int layer);
 		
-	private:
 		static bool inRange(int value, int min, int max);
 };
 
