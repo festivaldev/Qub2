@@ -14,8 +14,10 @@
 class Qub {
 	public:
 		static void setup();
-		
-		static void enableColumn(int column);
+
+        static void changeSet(int set);
+
+        static void enableColumn(int column);
 		static void disableColumn(int column);
 		static void enableColumns();
 		static void disableColumns();
@@ -30,7 +32,6 @@ class Qub {
 		static void enableLEDInLayer(int column, int layer);
 		static void enableLEDsInLayer(int layer);
 		
-	private:
 		static bool inRange(int value, int min, int max);
 };
 

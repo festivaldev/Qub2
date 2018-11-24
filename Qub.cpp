@@ -8,9 +8,17 @@
 
 #include "Qub.h"
 
-// const int columns[]	= { 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-const int columns[] = { 6, 3, 4, 7, 10, 9, 8, 5, 2 };
-const int layers[]	= { 11, 12, 13 };
+static int columns[] = { 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+const int layers[] = { 11, 12, 13 };
+
+const int sets[][9] = {
+    { 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+    { 10, 9, 8, 7, 6, 5, 4, 3, 2 },
+    { 4, 7, 10, 3, 6, 9, 2, 5, 8 },
+    { 8, 5, 2, 9, 6, 3, 10, 7, 4 },
+    { 2, 3, 4, 7, 10, 9, 8, 5, 6 },
+    { 6, 3, 4, 7, 10, 9, 8, 5, 2 },
+};
 
 /**
  * @brief Setup Qub and configure the required pins
@@ -26,6 +34,17 @@ void Qub::setup() {
 	for (int l: layers) {
 		pinMode(l, OUTPUT);
 	}
+}
+
+/**
+ * @brief Changes the pin definition order by selecting a new set
+ * 
+ * @param set The set index to select
+ */
+void Qub::changeSet(int set) {
+    for (int i = 0; i < 9; i++) {
+        columns[i] = sets[set][i];
+    }
 }
 
 /**
@@ -162,8 +181,6 @@ void Qub::enableLEDsInLayer(int layer) {
 	Qub::enableColumns();
 	Qub::enableLayer(layer);
 }
-
-
 
 /**
  * @brief Checks if a value is in a defined range
