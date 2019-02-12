@@ -6,10 +6,22 @@
 //  Copyright © 2018 Team FESTIVAL. All rights reserved.
 //
 
+#include <Arduino.h>
+
 #ifndef Qub_h
 #define Qub_h
 
-#include <Arduino.h>
+enum ButtonState {
+	Pressed,
+	Unpressed
+};
+
+enum OperatingMode {
+	Default,
+	Brightness,
+	RegNumber,
+	RandomNumer
+};
 
 class Qub {
 	public:

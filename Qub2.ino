@@ -9,66 +9,66 @@
 #include "Qub.h"
 String matNr = "70454016"; // 70453310, 70453510
 
-int mode = 0;
-bool isChangingMode = false;
-unsigned long rotateTime = 0;
-long interval = 200;
+unsigned long cMillis = 0;
+byte btnPort = 0x13;
+ButtonState buttonState = Unpressed;
+OperatingMode opMode = Default;
 int layerStore[][9] = {
-	{0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0, 0, 0, 0}
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 int numberDefs[][9] = {
-	{9, 0, 0, 0, 0, 0, 0, 0, 0}, // 0
-	{0, 0, 0, 0, 1, 0, 0, 0, 0}, // 1
-	{0, 0, 3, 0, 0, 0, 7, 0, 0}, // 2
-	{0, 0, 3, 0, 1, 0, 7, 0, 0}, // 3
-	{9, 0, 3, 0, 0, 0, 7, 0, 5}, // 4
-	{9, 0, 3, 0, 1, 0, 7, 0, 5}, // 5
-	{9, 0, 3, 8, 0, 4, 7, 0, 5}, // 6
-	{9, 0, 3, 8, 1, 4, 7, 0, 5}, // 7
-	{9, 2, 3, 8, 0, 4, 7, 6, 5}, // 8
-	{9, 2, 3, 8, 1, 4, 7, 6, 5}, // 9
+	{ 9, 0, 0, 0, 0, 0, 0, 0, 0 },	// 0
+	{ 0, 0, 0, 0, 1, 0, 0, 0, 0 },	// 1
+	{ 0, 0, 3, 0, 0, 0, 7, 0, 0 },	// 2
+	{ 0, 0, 3, 0, 1, 0, 7, 0, 0 },	// 3
+	{ 9, 0, 3, 0, 0, 0, 7, 0, 5 },	// 4
+	{ 9, 0, 3, 0, 1, 0, 7, 0, 5 },	// 5
+	{ 9, 0, 3, 8, 0, 4, 7, 0, 5 },	// 6
+	{ 9, 0, 3, 8, 1, 4, 7, 0, 5 },	// 7
+	{ 9, 2, 3, 8, 0, 4, 7, 6, 5 },	// 8
+	{ 9, 2, 3, 8, 1, 4, 7, 6, 5 }	// 9
 };
 
 void setup() {
 	Qub::setup();
-	pinMode(A5, INPUT_PULLUP);
+	pinMode(btnPort, INPUT_PULLUP);
 	
 	mode0_setup();
 }
 
 void loop() {
-	int buttonIn = analogRead(A5);
+	int buttonIn = analogRead(btnPort);
 	
-	if (buttonIn < 512 && !isChangingMode) {
-		isChangingMode = true;
-		rotateTime = 0;
+	if (buttonIn < 512 && buttonState == Unpressed) {
+		buttonState = Pressed;
+		cMillis = millis();
 		
 		if (Qub::inRange(buttonIn, 20, 24)) {
-			mode = 1;
+			opMode = Brightness;
 			mode1_setup();
 		}
 		if (Qub::inRange(buttonIn, 27, 31)) {
-			mode = 2;
+			opMode = RegNumber;
 			mode2_setup();
 		}
 		if (Qub::inRange(buttonIn, 34, 38)) {
-			mode = 3;
+			opMode = RandomNumer;
 			mode3_setup(rand() % 6 + 1);
 		}
 	} else if (buttonIn > 512) {
-		isChangingMode = false;
+		buttonState = Unpressed;
 	}
 	
-	switch (mode) {
-		case 1:
+	switch (opMode) {
+		case Brightness:
 			mode1_loop();
 			break;
-		case 2:
+		case RegNumber:
 			mode2_loop();
 			break;
-		case 3:
+		case RandomNumer:
 			mode3_loop();
 			break;
 		default:
@@ -78,6 +78,8 @@ void loop() {
 }
 
 
+
+#pragma mark - Runtime
 
 /**
  * Mode "0"
@@ -102,7 +104,7 @@ void mode0_loop() {
 	Qub::changeSet(setIndex);
 	renderLayerStore();
 	
-	if (millis() > rotateTime + currentInterval(64, 512)) {
+	if (millis() > cMillis + currentInterval(64, 512)) {
 		if (setIndex < 4) {
 			int store[] = { layerStore[0][0], layerStore[0][1], layerStore[0][2] };
 
@@ -143,7 +145,7 @@ void mode0_loop() {
 			}
 		}
 
-		rotateTime = millis();
+		cMillis = millis();
 		rotateCounter++;
 	}
 	
@@ -221,8 +223,8 @@ void mode2_loop() {
 	if (layerIndex < matNr.length() + 3) {
 		renderLayerStore();
 		
-		if (millis() > rotateTime + currentInterval(256, 1024)) {
-			rotateTime = millis();
+		if (millis() > cMillis + currentInterval(256, 1024)) {
+			cMillis = millis();
 			
 			layerNumbers[2] = layerNumbers[1];
 			layerNumbers[1] = layerNumbers[0];
@@ -250,8 +252,8 @@ void mode2_loop() {
     } else {
 		if (blinkStepCount < 6) {
 			Qub::enableLayers();
-			if (millis() > rotateTime + 250) {
-				rotateTime = millis();
+			if (millis() > cMillis + 250) {
+				cMillis = millis();
 				
 				if (blinkStepCount % 2 == 0) {
 					Qub::enableColumns();
@@ -293,7 +295,7 @@ void mode3_setup(int n) {
 void mode3_loop() {
 	renderLayerStore();
 
-	if (millis() >= rotateTime + currentInterval(64, 1024)) {
+	if (millis() >= cMillis + currentInterval(64, 1024)) {
 		for (int l = 0; l < 3; l++) {
 			for (int i = 0; i < 9; i++) {
 				int n = layerStore[l][i];
@@ -307,14 +309,13 @@ void mode3_loop() {
 			}
 		}
 		
-		rotateTime = millis();
+		cMillis = millis();
 	}
 }
 
 
 
-/** Helper Methods **/
-
+#pragma mark - Helper Methods
 
 /**
  * @brief This method shifts indices around and is used to rotate a pattern around Z axis
