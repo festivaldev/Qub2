@@ -13,11 +13,14 @@ unsigned long cMillis = 0;
 byte btnPort = 0x13;
 ButtonState buttonState = Unpressed;
 OperatingMode opMode = Default;
+
+// Define a space where we can store layer states
 int layerStore[][9] = {
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
+// Define the layout of dice-inspired numbers
 int numberDefs[][9] = {
 	{ 9, 0, 0, 0, 0, 0, 0, 0, 0 },	// 0
 	{ 0, 0, 0, 0, 1, 0, 0, 0, 0 },	// 1
@@ -32,19 +35,26 @@ int numberDefs[][9] = {
 };
 
 void setup() {
+	// Run Qub's setup routine which sets the column and layer ports as output
 	Qub::setup();
+	// Define the port where our buttons are connected as a pulled up input
 	pinMode(btnPort, INPUT_PULLUP);
 	
+	// Run the setup routine for our default mode
 	mode0_setup();
 }
 
 void loop() {
+	// Read the current resistance value on our button port
 	int buttonIn = analogRead(btnPort);
 	
+	// Check if the button is cuurently pressed and it hasn't been pressed in a previous loop
 	if (buttonIn < 512 && buttonState == Unpressed) {
 		buttonState = Pressed;
 		cMillis = millis();
 		
+		// Check the range of the button input
+		// Since it's an analog value, it may fluctuate, so we check if it's in a certain offset range
 		if (Qub::inRange(buttonIn, 20, 24)) {
 			opMode = Brightness;
 			mode1_setup();
@@ -61,6 +71,7 @@ void loop() {
 		buttonState = Unpressed;
 	}
 	
+	// Check in which mode we're currently in and call it method accordingly
 	switch (opMode) {
 		case Brightness:
 			mode1_loop();
@@ -92,6 +103,7 @@ int rotateCounter = 0;
 int setIndex = 0;
 
 void mode0_setup() {
+	// Set the default pattern that is shown in the first frame of the animation
 	for (int l = 0; l < 3; l++) {
 		int layer[9] = { 1, 2, 3, 0, 0, 0, 0, 0 };
 		for (int i = 0; i < 9; i++) {
@@ -101,13 +113,19 @@ void mode0_setup() {
 }
 
 void mode0_loop() {
+	// Change the set to the current index
 	Qub::changeSet(setIndex);
+	// Render whatever is currently stored inside the layer store
 	renderLayerStore();
 	
+	// Check if the current processor time is larger than our speed interval
 	if (millis() > cMillis + currentInterval(64, 512)) {
+		// Do this as long as we're still doing the relatively simple animation steps
 		if (setIndex < 4) {
+			// Create a temporary store for the first three items of our base layer
 			int store[] = { layerStore[0][0], layerStore[0][1], layerStore[0][2] };
 
+			// Perfom some magic
 			for (int i = 0; i < 7; i++) {
 				shift(cLayer, cLed);
 				shift(cLayer, cLed + 1);
@@ -127,6 +145,7 @@ void mode0_loop() {
 				}
 			}
 
+			// Replace the next three items in the layer store with the shifted indices of our LEDs
 			layerStore[0][3] = store[0] + (store[0] == 0 ? 0 : 3);
 			layerStore[0][4] = store[1] + (store[1] == 0 ? 0 : 3);
 			layerStore[0][5] = store[2] + (store[2] == 0 ? 0 : 3);
@@ -145,10 +164,12 @@ void mode0_loop() {
 			}
 		}
 
+		// Reset the stored processor time and increase our rotation counter
 		cMillis = millis();
 		rotateCounter++;
 	}
 	
+	// If we've reached the maximum amount of rotations, we're resetting the whole thing and advance to the next animation
 	if (rotateCounter == 8) {
 		Qub::disableLayers();
 		Qub::disableColumns();
@@ -167,10 +188,12 @@ void mode0_loop() {
  */
 
 void mode1_setup() {
+	// For this next trick, we need all columns enabled
 	Qub::enableColumns();
 }
 
 void mode1_loop() {
+	// Here we're getting the calculated duty cycle with the value from our potentiometer
 	float frequency = 100;
 	float cycleLength = 1000000 / frequency;
 	float dutyCycle;
@@ -187,6 +210,7 @@ void mode1_loop() {
 	timeOn = dutyCycle * cycleLength;
 	timeOff = cycleLength - timeOn;
 
+	// Instead of toggling 9 columns, we're just toggling 3 layers, which should improve efficiency
 	if (timeOn > 0) {
 		Qub::enableLayers();
 		delayMicroseconds(timeOn);
@@ -208,12 +232,16 @@ int blinkStepCount = 0;
 int layerNumbers[3] = { -1, -1 ,-1 };
 
 void mode2_setup() {
+	// For some reason, set 5 is the one to go with for dice numbers
 	Qub::changeSet(5);
+	// Clear whatever is stored in the layer store
 	clearLayerStore();
 	
+	// Reset the counters
 	layerIndex = 0;
 	blinkStepCount = 0;
 	
+	// Clear the numbers stored in the render definitions
 	for (int i = 0; i < 3; i++) {
 		layerNumbers[i] = -1;
 	}
@@ -221,49 +249,68 @@ void mode2_setup() {
 
 void mode2_loop() {
 	if (layerIndex < matNr.length() + 3) {
+		// First we display the whole registration number
 		renderLayerStore();
 		
+		// The potentiometer is again used as a speed controller
+		// Even though it's not supposed to be, but while we're at it using it as such everywhere...
 		if (millis() > cMillis + currentInterval(256, 1024)) {
 			cMillis = millis();
 			
+			// Move the previous number to parse to the next index
 			layerNumbers[2] = layerNumbers[1];
 			layerNumbers[1] = layerNumbers[0];
 			
+			// Parse a digit from matNr
 			int parsedNumber;
 			if (matNr.substring(layerIndex, layerIndex + 1) == "") {
+				// If we find an empty string, we probably reached the end of the string
+				// To not render anything, we return -1 as the parsed number
 				parsedNumber = -1;
 			} else {
+				// We found a non-empty string, so we can parse it to a number
 				parsedNumber = matNr.substring(layerIndex, layerIndex + 1).toInt();
 			}
+			// We store the parsed number at the very beginning of our store
 			layerNumbers[0] = parsedNumber;
 			
 			for (int l = 0; l < 3; l++) {
 				for (int i = 0; i < 9; i++) {
 					if (layerNumbers[l] >= 0) {
+						// Here we copy render definition of our parsed number into the layer store
 						layerStore[l][i] = numberDefs[layerNumbers[l]][i];
 					} else {
+						// If we've got a -1, we set every value to 0 (off)
 						layerStore[l][i] = 0;
 					}
 				}
 			}
 			
+			// Increase the layer index so the numbers move up in the next step
 			layerIndex++;
 		}
     } else {
+		// After we displayed the registration number, we're supposed to blink 3 times
+		// Every on/off step counts, so we're using 3*2=6 steps total
 		if (blinkStepCount < 6) {
 			Qub::enableLayers();
+			
+			// Toggle the state every 250ms
 			if (millis() > cMillis + 250) {
 				cMillis = millis();
 				
+				// Decide by the current step count if we should enable or disable the LEDs
 				if (blinkStepCount % 2 == 0) {
 					Qub::enableColumns();
 				} else {
 					Qub::disableColumns();
 				}
 				
+				// Increase the step counter
 				blinkStepCount++;
 			}
         } else {
+			// We've passed the final step, so reset everything
 			Qub::disableLayers();
 			layerIndex = 0;
             blinkStepCount = 0;
@@ -281,10 +328,12 @@ void mode2_loop() {
  */
 
 void mode3_setup(int n) {
+	// Still using dice numbers, so we still need set 5
 	Qub::changeSet(5);
-	
+	// Clear whatever is stored in our layer store
 	clearLayerStore();
 	
+	// Load the render definition for the random number n in the layer store
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
 			layerStore[i][j] = numberDefs[n][(i * 3) + j];
@@ -293,9 +342,12 @@ void mode3_setup(int n) {
 }
 
 void mode3_loop() {
+	// Render the layer store
 	renderLayerStore();
 
+	// Use the potentiometer as a speed controller
 	if (millis() >= cMillis + currentInterval(64, 1024)) {
+		// Perform some magic to make shift indices
 		for (int l = 0; l < 3; l++) {
 			for (int i = 0; i < 9; i++) {
 				int n = layerStore[l][i];
@@ -305,10 +357,13 @@ void mode3_loop() {
 						n = 2;
 					}
 				}
+				
+				// Store the shifted indices in the layer store
 				layerStore[l][i] = n;
 			}
 		}
 		
+		// As always, reset the processor time after each step
 		cMillis = millis();
 	}
 }

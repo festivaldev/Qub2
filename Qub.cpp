@@ -42,6 +42,7 @@ void Qub::setup() {
  * @param set The set index to select
  */
 void Qub::changeSet(int set) {
+	// Apply each number from the specified set to the columns array
     for (int i = 0; i < 9; i++) {
         columns[i] = sets[set][i];
     }
