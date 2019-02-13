@@ -55,15 +55,15 @@ void loop() {
 		
 		// Check the range of the button input
 		// Since it's an analog value, it may fluctuate, so we check if it's in a certain offset range
-		if (Qub::inRange(buttonIn, 20, 24)) {
+		if (Qub::inRange(buttonIn, 18, 24)) {
 			opMode = Brightness;
 			mode1_setup();
 		}
-		if (Qub::inRange(buttonIn, 27, 31)) {
+		if (Qub::inRange(buttonIn, 26, 32)) {
 			opMode = RegNumber;
 			mode2_setup();
 		}
-		if (Qub::inRange(buttonIn, 34, 38)) {
+		if (Qub::inRange(buttonIn, 33, 39)) {
 			opMode = RandomNumer;
 			mode3_setup(rand() % 6 + 1);
 		}
