@@ -33,31 +33,33 @@ int numberDefs[][9] = {
 
 void setup() {
 	Qub::setup();
-	pinMode(A5, INPUT_PULLUP);
+	pinMode(A0, INPUT);
+	pinMode(A1, INPUT);
+	pinMode(A2, INPUT);
 	
 	mode0_setup();
 }
 
 void loop() {
-	int buttonIn = analogRead(A5);
+	int buttonIn = (digitalRead(A0) << 0) + (digitalRead(A1) << 1) + (digitalRead(A2) << 2);
 	
-	if (buttonIn < 512 && !isChangingMode) {
+	if (buttonIn > 0 && !isChangingMode) {
 		isChangingMode = true;
 		rotateTime = 0;
 		
-		if (Qub::inRange(buttonIn, 20, 24)) {
+		if (buttonIn & 1 == 1) {
 			mode = 1;
 			mode1_setup();
 		}
-		if (Qub::inRange(buttonIn, 27, 31)) {
+		if (buttonIn & 2 == 2) {
 			mode = 2;
 			mode2_setup();
 		}
-		if (Qub::inRange(buttonIn, 34, 38)) {
+		if (buttonIn & 4 == 4) {
 			mode = 3;
 			mode3_setup(rand() % 6 + 1);
 		}
-	} else if (buttonIn > 512) {
+	} else if (buttonIn == 0) {
 		isChangingMode = false;
 	}
 	
@@ -161,7 +163,7 @@ void mode0_loop() {
 /**
  * Mode 1
  * 
- * @brief This mode uses the potentiometer on A7 to change the brightness of every LED
+ * @brief This mode uses the potentiometer on A3 to change the brightness of every LED
  */
 
 void mode1_setup() {
@@ -178,7 +180,7 @@ void mode1_loop() {
 
 	float vOut;
 
-	int val = analogRead(A7);
+	int val = analogRead(A3);
 	vOut = map(val, 0, 1024, 0, 255);
 	dutyCycle = vOut / 255;
 
@@ -371,7 +373,7 @@ void renderLayerStore() {
 
 
 /**
- * @description This method calculates and returns the delta value on port A7
+ * @description This method calculates and returns the delta value on port A3
  * so it can be used as a speed controller instead of a delay controller
  * (higher value = higher speed)
  * 
@@ -380,7 +382,7 @@ void renderLayerStore() {
  */
 
 int currentInterval(int lowerBound, int upperBound) {
-	return map(1024 - analogRead(A7), 0, 1024, lowerBound, upperBound);
+	return map(1024 - analogRead(A3), 0, 1024, lowerBound, upperBound);
 }
 
 
